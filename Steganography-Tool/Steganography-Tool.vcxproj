@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{b90006a0-7391-4c8f-9f6d-68956e11effd}</ProjectGuid>
+    <ProjectGuid>{09573388-8130-B03B-B89A-84D1978A9B7D}</ProjectGuid>
     <RootNamespace>SteganographyTool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
