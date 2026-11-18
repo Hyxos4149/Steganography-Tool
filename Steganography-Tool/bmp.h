@@ -1,8 +1,8 @@
 #pragma once
 
-
-class bmp
-{
-
-};
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <bitset>
+#include <cstdint>
 

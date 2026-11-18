@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Steganography-Tool/Steganography-Tool.vcxproj" Id="b90006a0-7391-4c8f-9f6d-68956e11effd" />
+  <Project Path="Steganography-Tool/Steganography-Tool.vcxproj" />
 </Solution>
