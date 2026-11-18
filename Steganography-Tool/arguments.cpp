@@ -9,7 +9,7 @@ arguments::arguments()
 	m_key = "";
 }
 
-void arguments::argumentParser(int argc, char* argv)
+void arguments::argumentParser(int argc, char** argv)
 {
 	m_source = argv[1];
 	m_destination = argv[2];
