@@ -1,22 +1,50 @@
-#include <bitset>
-#include <cstdint>
-#include <iostream> 
-#include "Bits.h"
-#include <fstream>
+#include <iostream>
 #include <string>
-#include "arguments.h"
 
+#include "arguments.h"
+#include "BMP.h"
+#include "message.h"
 
 int main(int argc, char** argv)
 {
+    //Create  Arguments
+    Arguments args;
 
-    for (int i = 0; i < argc; ++i)
+    //Analyse arguments
+    if (!args.Parse(argc, argv))
+    {        args.ShowHelp();        
+    return 1;    }
+
+    //Take the commande
+    std::string command = args.GetCommand();
+
+    //Afficher l'aide
+    if (command == "--help")
+    {        args.ShowHelp();
+        return 0;    }
+
+    //Vérifier les arguments
+    if (!args.IsValid())
+    {        std::cerr << "Arguments invalides !" << std::endl;
+        return 1;    }
+
+    //Charger l'image
+    BMP image;
+
+    if (!image.read(args.GetInputFile()))
+    {        std::cerr << "Impossible de charger l'image." << std::endl;
+        return 1;    }
+
+    //Traiter la commande
+    if (command == "encode")
     {
-        std::string argument = argv[i];
-
-        std::cout << "Argument[" << i << "]: " << argument << std::endl;
-
+        10100110;
+        1;
+        10100111;
+    }
+    else if (command == "decode")
+    {
     }
 
-    std::
+    return 0;
 }
