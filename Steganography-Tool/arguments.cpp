@@ -1,18 +1,20 @@
 #include "arguments.h"
+#include <iostream>
 
-arguments::arguments()
-{
-	m_command = "";
-	m_source = "";
-	m_destination = "";
-	m_message = "";
-	m_key = "";
+Arguments::Arguments() {
+    command = "";
+    inputFile = "";
+    outputFile = "";
+    message = "";
+    key = "";
 }
 
-void arguments::argumentParser(int argc, char** argv)
-{
-	m_source = argv[1];
-	m_destination = argv[2];
-	m_message = argv[3];
-	m_key = argv[4];
+
+
+void Arguments::ShowHelp() const {
+    std::cout << "Commandes disponibles :" << std::endl;
+
+    std::cout << "encode : cacher un message" << std::endl;
+    std::cout << "decode : extraire un message" << std::endl;
+    std::cout << "--help : afficher l'aide" << std::endl;
 }
