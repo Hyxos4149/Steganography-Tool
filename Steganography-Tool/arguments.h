@@ -11,12 +11,14 @@ private:
 public:
     Arguments();
 
-	bool Parse(int argc, char* argv[]) { return false; }
+	// Function to parse command-line arguments
+	bool Parse(int argc, char** argv) { return false; }
 
     void ShowHelp() const;
 
 	bool IsValid() const { return false; }
 
+	// Getters for the private members
 	std::string GetCommand() const {		return command;	}
     std::string GetInputFile() const {        return inputFile;    }
     std::string GetOutputFile() const {        return outputFile;    }

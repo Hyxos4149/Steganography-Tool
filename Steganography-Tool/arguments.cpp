@@ -1,6 +1,7 @@
 #include "arguments.h"
 #include <iostream>
 
+//list of arguments: encode, decode, --help
 Arguments::Arguments() {
     command = "";
     inputFile = "";
@@ -10,7 +11,7 @@ Arguments::Arguments() {
 }
 
 
-
+// Function to display help information
 void Arguments::ShowHelp() const {
     std::cout << "Commandes disponibles :" << std::endl;
 
