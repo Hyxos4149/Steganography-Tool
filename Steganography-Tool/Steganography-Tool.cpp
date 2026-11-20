@@ -1,7 +1,8 @@
 #include <bitset>
 #include <cstdint>
 #include <iostream> 
-#include "Bits.h"
+#include "Message.h"
+#include "BMP.h"
 #include <fstream>
 #include <string>
 
