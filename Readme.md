@@ -1,4 +1,4 @@
-# GTech 1 : Fiche de révision C++20
+# GTech 1 :
 ## Manipulation de bits, fichiers binaires et stéganographie BMP
 
 ---
