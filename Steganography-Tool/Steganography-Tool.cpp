@@ -1,61 +1,61 @@
-#include <bitset>
-#include <cstdint>
-#include <iostream> 
-#include "Bits.h"
-#include <fstream>
+#include <exception>
+#include <iostream>
 #include <string>
 
+#include "arguments.h"
+#include "bmp.h"
+#include "message.h"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
+    Arguments args;
 
-    for (int i = 0; i < argc; ++i)
-    {
-        std::string argument = argv[i];
-
-        std::cout << "Argument[" << i << "]: " << argument << std::endl;
-
+    if (!args.Parse(argc, argv)) {
+        args.ShowHelp();
+        return 1;
     }
 
-    std::ifstream file("image.bmp", std::ios::binary);
+    const std::string command = args.GetCommand();
 
-    if (!file.is_open())
-    {
-        throw std::runtime_error("Cannot open file");
-    }
-    else if (file.is_open()) {
-        std::cout << "File opened successfully" << std::endl;
-
+    if (command == "--help") {
+        args.ShowHelp();
+        return 0;
     }
 
-    constexpr std::size_t buffer_size = 500;
-    char buffer[buffer_size];
-
-    file.read(buffer, buffer_size);
-
-    std::streamsize bytes_read = file.gcount();
-
-    std::string result(
-        buffer,
-        static_cast<std::size_t>(bytes_read)
-    );
-
-	char signature[2] = { result[0], result[1] };
-
-    std::cout << "Signature : "
-        << signature[0] << signature[1] << '\n';
-
-    if (signature[0] == 'B' && signature[1] == 'M')
-    {
-        std::cout << "La signature BMP est reconnue.\n";
-    }
-    else
-    {
-        std::cout << "Ce fichier ne semble pas etre un BMP.\n";
+    if (!args.IsValid()) {
+        std::cerr << "Arguments invalides !" << std::endl;
+        return 1;
     }
 
-    file.clear();
-    file.seekg(10, std::ios::beg);
+    try {
+        BMP image = BMP::load(args.GetInputFile());
 
-    std::streampos position = file.tellg();
+        if (command == "encode") {
+            message::embed(
+                image,
+                args.GetMessage(),
+                args.GetKey()
+            );
+
+            image.save(args.GetOutputFile());
+
+            std::cout << "Message cache avec succes." << std::endl;
+        }
+        else if (command == "decode") {
+            const std::string text =
+                message::extract(image, args.GetKey());
+
+            std::cout << text << std::endl;
+        }
+        else {
+            std::cerr << "Commande inconnue : "
+                << command << std::endl;
+            return 1;
+        }
+    }
+    catch (const std::exception& error) {
+        std::cerr << "Erreur : " << error.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
