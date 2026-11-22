@@ -1,3 +1,3 @@
 # GTech 1 : Project 3 Steganography-Tool
 
-By Alexis & ALexandre 
+By Alexis (arguments and main) & ALexandre (bmp and message)
