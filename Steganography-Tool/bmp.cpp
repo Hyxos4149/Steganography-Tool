@@ -1,89 +1,237 @@
 #include "bmp.h"
 
-#include <fstream>
-#include <iostream>
+#include <cstdio>
+#include <cstdint>
+#include <limits>
+#include <stdexcept>
 
-static std::uint32_t readU32(const std::vector<std::uint8_t>& h, std::size_t pos) {
-    return  static_cast<std::uint32_t>(h[pos])
-        | static_cast<std::uint32_t>(h[pos + 1]) << 8
-        | static_cast<std::uint32_t>(h[pos + 2]) << 16
-        | static_cast<std::uint32_t>(h[pos + 3]) << 24;
+namespace {
+    FILE* openFile(const std::string& path, const char* mode) {
+#ifdef _MSC_VER
+        FILE* file = nullptr;
+        if (fopen_s(&file, path.c_str(), mode) != 0) {
+            return nullptr;
+        }
+        return file;
+#else
+        return std::fopen(path.c_str(), mode);
+#endif
+    }
+
+    std::uint16_t read16(const std::uint8_t* p) {
+        return static_cast<std::uint16_t>(p[0])
+            | static_cast<std::uint16_t>(
+                static_cast<std::uint16_t>(p[1]) << 8
+                );
+    }
+
+    std::uint32_t read32(const std::uint8_t* p) {
+        return static_cast<std::uint32_t>(p[0])
+            | (static_cast<std::uint32_t>(p[1]) << 8)
+            | (static_cast<std::uint32_t>(p[2]) << 16)
+            | (static_cast<std::uint32_t>(p[3]) << 24);
+    }
+
+    void writeAll(
+        FILE* file,
+        const std::vector<std::uint8_t>& bytes,
+        const std::string& path
+    ) {
+        if (!bytes.empty()
+            && std::fwrite(bytes.data(), 1, bytes.size(), file) != bytes.size()) {
+            throw std::runtime_error("echec d'ecriture BMP : " + path);
+        }
+    }
 }
 
-bool BMP::read(const std::string& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in.is_open()) {
-        std::cerr << "Erreur : impossible d'ouvrir " << path << "\n";
-        return false;
+BMP BMP::load(const std::string& path) {
+    FILE* file = openFile(path, "rb");
+
+    if (!file) {
+        throw std::runtime_error(
+            "Impossible d'ouvrir le BMP : " + path
+        );
     }
 
-    // 1) Lire les 14 premiers octets (en-tête de fichier)
-    std::vector<std::uint8_t> fileHeader(14);
-    in.read(reinterpret_cast<char*>(fileHeader.data()), 14);
-    if (in.gcount() != 14) {
-        std::cerr << "Erreur : en-tête incomplet\n";
-        return false;
+    BMP result;
+
+    try {
+        if (std::fseek(file, 0, SEEK_END) != 0) {
+            throw std::runtime_error("echec de recherche dans le BMP.");
+        }
+
+        const long end = std::ftell(file);
+
+        if (end < 54) {
+            throw std::runtime_error("BMP tronque ou trop court.");
+        }
+
+        if (std::fseek(file, 0, SEEK_SET) != 0) {
+            throw std::runtime_error("echec de recherche dans le BMP.");
+        }
+
+        result.bytes_.resize(static_cast<std::size_t>(end));
+
+        if (std::fread(
+            result.bytes_.data(),
+            1,
+            result.bytes_.size(),
+            file
+        ) != result.bytes_.size()) {
+            throw std::runtime_error("Lecture BMP incomplete.");
+        }
+
+        if (std::fclose(file) != 0) {
+            file = nullptr;
+            throw std::runtime_error("echec de fermeture du BMP.");
+        }
+
+        file = nullptr;
+    }
+    catch (...) {
+        if (file) {
+            std::fclose(file);
+        }
+
+        throw;
     }
 
-    // 2) Signature "BM"
-    if (fileHeader[0] != 'B' || fileHeader[1] != 'M') {
-        std::cerr << "Erreur : ce n'est pas un fichier BMP\n";
-        return false;
+    const auto* bytes = result.bytes_.data();
+
+    if (bytes[0] != 'B' || bytes[1] != 'M') {
+        throw std::runtime_error("Signature BMP invalide.");
     }
 
-    // 3) Offset où commencent les pixels
-    std::uint32_t pixelOffset = readU32(fileHeader, 10);
-    if (pixelOffset < 14) {
-        std::cerr << "Erreur : offset invalide\n";
-        return false;
+    const std::uint32_t declaredSize = read32(bytes + 2);
+    result.pixelOffset_ = read32(bytes + 10);
+
+    if (read32(bytes + 14) != 40) {
+        throw std::runtime_error(
+            "Seul un en-tête BMP de 40 octets est accepte."
+        );
     }
 
-    // 4) Lire le reste de l'en-tête (jusqu'aux pixels)
-    std::vector<std::uint8_t> rest(pixelOffset - 14);
-    in.read(reinterpret_cast<char*>(rest.data()), static_cast<std::streamsize>(rest.size()));
-    if (static_cast<std::size_t>(in.gcount()) != rest.size()) {
-        std::cerr << "Erreur : en-tête tronqué\n";
-        return false;
+    const std::uint32_t rawWidth = read32(bytes + 18);
+    const std::uint32_t rawHeight = read32(bytes + 22);
+
+    if (rawWidth == 0
+        || rawHeight == 0
+        || rawWidth > 0x7FFFFFFFu
+        || rawHeight > 0x7FFFFFFFu) {
+        throw std::runtime_error(
+            "La largeur et la hauteur doivent être positives."
+        );
     }
 
-    header = fileHeader;
-    header.insert(header.end(), rest.begin(), rest.end());
-
-    // 5) Largeur / hauteur / bits par pixel (dans le DIB header, à partir de l'octet 14)
-    width = static_cast<int>(readU32(header, 18));
-    height = static_cast<int>(readU32(header, 22));
-    std::uint16_t bpp = static_cast<std::uint16_t>(header[28] | (header[29] << 8));
-    std::uint32_t compression = readU32(header, 30);
-
-    if (bpp != 24 || compression != 0) {
-        std::cerr << "Erreur : seuls les BMP 24 bits non compressés sont gérés\n";
-        return false;
+    if (read16(bytes + 26) != 1
+        || read16(bytes + 28) != 24
+        || read32(bytes + 30) != 0) {
+        throw std::runtime_error(
+            "Il faut un BMP 24 bits non compresse."
+        );
     }
 
-    // 6) Lire tous les pixels (padding inclus)
-    std::size_t rowSize = ((static_cast<std::size_t>(width) * 3 + 3) / 4) * 4;
-    std::size_t absHeight = static_cast<std::size_t>(height < 0 ? -height : height);
-    std::size_t dataSize = rowSize * absHeight;
-
-    data.assign(dataSize, 0);
-    in.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(dataSize));
-    if (static_cast<std::size_t>(in.gcount()) != dataSize) {
-        std::cerr << "Erreur : données de pixels incomplètes\n";
-        return false;
+    if (result.pixelOffset_ < 54
+        || result.pixelOffset_ > result.bytes_.size()) {
+        throw std::runtime_error("Offset des pixels invalide.");
     }
 
-    return true;
+    result.width_ = rawWidth;
+    result.height_ = rawHeight;
+
+    const std::uint64_t rawRow =
+        static_cast<std::uint64_t>(result.width_) * 3u;
+
+    const std::uint64_t stride =
+        (rawRow + 3u) & ~std::uint64_t(3u);
+
+    const std::uint64_t pixelBytes =
+        stride * result.height_;
+
+    if (stride > std::numeric_limits<std::size_t>::max()
+        || pixelBytes > std::numeric_limits<std::size_t>::max()
+        || pixelBytes > result.bytes_.size() - result.pixelOffset_) {
+        throw std::runtime_error(
+            "Les donnees de pixels sont tronquees ou trop grandes."
+        );
+    }
+
+    result.rowStride_ = static_cast<std::size_t>(stride);
+    result.pixelBytes_ = static_cast<std::size_t>(pixelBytes);
+
+    const std::uint64_t pixelEnd =
+        static_cast<std::uint64_t>(result.pixelOffset_) + pixelBytes;
+
+    if (declaredSize != 0
+        && (declaredSize > result.bytes_.size()
+            || declaredSize < pixelEnd)) {
+        throw std::runtime_error(
+            "La taille declaree du BMP est incoherente."
+        );
+    }
+
+    return result;
 }
 
-bool BMP::write(const std::string& path) const {
-    std::ofstream out(path, std::ios::binary);
-    if (!out.is_open()) {
-        std::cerr << "Erreur : impossible de créer " << path << "\n";
-        return false;
+void BMP::save(const std::string& path) const {
+    // Le mode "x" evite d'ecraser un fichier dejà present.
+    FILE* file = openFile(path, "wbx");
+
+    if (!file) {
+        throw std::runtime_error(
+            "Impossible de creer le fichier sans en ecraser un autre : "
+            + path
+        );
     }
 
-    out.write(reinterpret_cast<const char*>(header.data()), static_cast<std::streamsize>(header.size()));
-    out.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
+    try {
+        writeAll(file, bytes_, path);
 
-    return out.good();
+        if (std::fflush(file) != 0) {
+            throw std::runtime_error("echec d'ecriture du BMP.");
+        }
+
+        if (std::fclose(file) != 0) {
+            file = nullptr;
+            throw std::runtime_error("echec de fermeture du BMP.");
+        }
+
+        file = nullptr;
+    }
+    catch (...) {
+        if (file) {
+            std::fclose(file);
+        }
+
+        std::remove(path.c_str());
+        throw;
+    }
+}
+
+std::size_t BMP::componentCount() const noexcept {
+    return static_cast<std::size_t>(width_)
+        * static_cast<std::size_t>(height_)
+        * 3u;
+}
+
+std::size_t BMP::componentFileOffset(std::size_t index) const {
+    if (index >= componentCount()) {
+        throw std::out_of_range("Index de composante hors limites.");
+    }
+
+    const std::size_t componentsPerRow =
+        static_cast<std::size_t>(width_) * 3u;
+
+    const std::size_t row = index / componentsPerRow;
+    const std::size_t column = index % componentsPerRow;
+
+    return pixelOffset_ + row * rowStride_ + column;
+}
+
+std::uint8_t BMP::component(std::size_t index) const {
+    return bytes_[componentFileOffset(index)];
+}
+
+void BMP::setComponent(std::size_t index, std::uint8_t value) {
+    bytes_[componentFileOffset(index)] = value;
 }

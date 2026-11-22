@@ -1,30 +1,42 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 class BMP {
 public:
-    // Lit un BMP 24 bits non compressé. Retourne false en cas d'erreur.
-    bool read(const std::string& path);
+    // Charge un BMP accepte par le projet.
+    static BMP load(const std::string& path);
 
-    // Écrit le BMP (en-tête + pixels). Retourne false en cas d'erreur.
-    bool write(const std::string& path) const;
+    // Enregistre l'image sans ecraser un fichier existant.
+    void save(const std::string& path) const;
 
-    // Accès aux octets de pixels (B, G, R, B, G, R...)
-    std::vector<std::uint8_t>& pixels() { return data; }
-    const std::vector<std::uint8_t>& pixels() const { return data; }
+    std::uint32_t width() const noexcept {
+        return width_;
+    }
 
-    int getWidth() const { return width; }
-    int getHeight() const { return height; }
+    std::uint32_t height() const noexcept {
+        return height_;
+    }
 
-    // Nombre d'octets utiles pour cacher un message (1 bit par octet)
-    std::size_t capacityBits() const { return data.size(); }
+    std::size_t componentCount() const noexcept;
+
+    // Acces aux composantes couleur B, G et R.
+    // Le padding des lignes est ignore.
+    std::uint8_t component(std::size_t index) const;
+    void setComponent(std::size_t index, std::uint8_t value);
 
 private:
-    std::vector<std::uint8_t> header;
-    std::vector<std::uint8_t> data;
-    int width = 0;
-    int height = 0;
+    std::vector<std::uint8_t> bytes_;
+
+    std::uint32_t width_ = 0;
+    std::uint32_t height_ = 0;
+
+    std::size_t pixelOffset_ = 0;
+    std::size_t rowStride_ = 0;
+    std::size_t pixelBytes_ = 0;
+
+    std::size_t componentFileOffset(std::size_t index) const;
 };

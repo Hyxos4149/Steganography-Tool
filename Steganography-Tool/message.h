@@ -1,22 +1,29 @@
 #pragma once
 
-#include <cstdint>
+#include "bmp.h"
+
+#include <cstddef>
 #include <string>
-#include <vector>
 
-class Message {
-public:
-    Message() = default;
-    explicit Message(const std::string& text);
+namespace message {
+    struct Metadata {
+        static constexpr std::size_t kSize = 13;
+    };
 
-    // Texte -> bits (avec terminateur '\0' à la fin)
-    std::vector<std::uint8_t> toBits() const;
+    // Cache le texte dans l'image.
+    // Une clé vide signifie qu'il n'y a pas de XOR.
+    void embed(
+        BMP& image,
+        const std::string& text,
+        const std::string& key = ""
+    );
 
-    // Bits -> texte (s'arrête au premier '\0')
-    static std::string fromBits(const std::vector<std::uint8_t>& bits);
+    // Extrait le texte de l'image.
+    std::string extract(
+        const BMP& image,
+        const std::string& key = ""
+    );
 
-    const std::string& getText() const { return text; }
-
-private:
-    std::string text;
-};
+    // Renvoie le nombre maximal d'octets de texte cachables.
+    std::size_t capacityBytes(const BMP& image);
+}

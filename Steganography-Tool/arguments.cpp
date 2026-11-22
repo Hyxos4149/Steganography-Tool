@@ -3,8 +3,7 @@
 #include <iostream>
 
 Arguments::Arguments() : command(), inputFile(), outputFile(), message(), key()
-{
-}
+{}
 
 bool Arguments::Parse(int argc, char** argv)
 {
