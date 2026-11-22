@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{b90006a0-7391-4c8f-9f6d-68956e11effd}</ProjectGuid>
+    <ProjectGuid>{B90006A0-7391-4C8F-9F6D-68956E11EFFD}</ProjectGuid>
     <RootNamespace>SteganographyTool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -139,7 +139,15 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="arguments.cpp" />
+    <ClCompile Include="bmp.cpp" />
+    <ClCompile Include="message.cpp" />
     <ClCompile Include="Steganography-Tool.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="arguments.h" />
+    <ClInclude Include="bmp.h" />
+    <ClInclude Include="message.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
