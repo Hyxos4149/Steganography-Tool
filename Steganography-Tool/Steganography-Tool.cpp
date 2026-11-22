@@ -1,5 +1,9 @@
-#include <exception>
-#include <iostream>
+#include <bitset>
+#include <cstdint>
+#include <iostream> 
+#include "message.h"
+#include "bmp.h"
+#include <fstream>
 #include <string>
 
 #include "arguments.h"
