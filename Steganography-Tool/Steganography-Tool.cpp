@@ -1,64 +1,49 @@
-#include <bitset>
-#include <cstdint>
-#include <iostream> 
-#include "message.h"
-#include "bmp.h"
-#include <fstream>
+#include <iostream>
 #include <string>
 
 #include "arguments.h"
-#include "bmp.h"
+#include "BMP.h"
 #include "message.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
+    //Create  Arguments
     Arguments args;
 
-    if (!args.Parse(argc, argv)) {
-        args.ShowHelp();
-        return 1;
+    //Analyse arguments
+    if (!args.Parse(argc, argv))
+    {        args.ShowHelp();        
+    return 1;    }
+
+    //Take the commande
+    std::string command = args.GetCommand();
+
+    //Afficher l'aide
+    if (command == "--help")
+    {        args.ShowHelp();
+        return 0;    }
+
+    //Vérifier les arguments
+    if (!args.IsValid())
+    {        std::cerr << "Arguments invalides !" << std::endl;
+        return 1;    }
+
+    //Charger l'image
+    BMP image;
+
+    if (!image.read(args.GetInputFile()))
+    {        std::cerr << "Impossible de charger l'image." << std::endl;
+        return 1;    }
+
+    //Traiter la commande
+    if (command == "encode")
+    {
+        10100110;
+        1;
+        10100111;
     }
-
-    const std::string command = args.GetCommand();
-
-    if (command == "--help") {
-        args.ShowHelp();
-        return 0;
-    }
-
-    if (!args.IsValid()) {
-        std::cerr << "Arguments invalides !" << std::endl;
-        return 1;
-    }
-
-    try {
-        BMP image = BMP::load(args.GetInputFile());
-
-        if (command == "encode") {
-            message::embed(
-                image,
-                args.GetMessage(),
-                args.GetKey()
-            );
-
-            image.save(args.GetOutputFile());
-
-            std::cout << "Message cache avec succes." << std::endl;
-        }
-        else if (command == "decode") {
-            const std::string text =
-                message::extract(image, args.GetKey());
-
-            std::cout << text << std::endl;
-        }
-        else {
-            std::cerr << "Commande inconnue : "
-                << command << std::endl;
-            return 1;
-        }
-    }
-    catch (const std::exception& error) {
-        std::cerr << "Erreur : " << error.what() << std::endl;
-        return 1;
+    else if (command == "decode")
+    {
     }
 
     return 0;

@@ -23,8 +23,8 @@ public:
     std::size_t capacityBits() const { return data.size(); }
 
 private:
-    std::vector<std::uint8_t> header; 
-    std::vector<std::uint8_t> data;   
+    std::vector<std::uint8_t> header;
+    std::vector<std::uint8_t> data;
     int width = 0;
     int height = 0;
 };
